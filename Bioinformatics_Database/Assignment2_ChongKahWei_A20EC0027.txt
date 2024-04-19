@@ -1,0 +1,77 @@
+#Chong Kah Wei A20EC0027
+#2
+if (!requireNamespace("BiocManager", quietly=TRUE))
+	install.packages("BiocManager")
+BiocManager::install("msa")
+library(msa)
+system.file("tex", "texshade.sty", package="msa")
+
+#3
+mySequenceFile <- system.file("examples", "exampleAA.fasta", package="msa")
+mySequences <- readAAStringSet(mySequenceFile)
+mySequences
+myFirstAlignment <- msa(mySequences)
+myFirstAlignment
+print(myFirstAlignment, show="complete")
+msaPrettyPrint(myFirstAlignment, y=c(164, 213), output="asis", showNames="none", showLogo="none", askForOverwrite=FALSE)
+
+#4
+myClustalWAlignment <- msa(mySequences, "ClustalW")
+myClustalWAlignment
+myClustalOmegaAlignment <- msa(mySequences, "ClustalOmega")
+myClustalOmegaAlignment
+myMuscleAlignment <- msa(mySequences, "Muscle")
+myMuscleAlignment
+
+#6
+myMaskedAlignment <- myFirstAlignment
+colM <- IRanges(start=1, end=100)
+colmask(myMaskedAlignment) <- colM
+myMaskedAlignment
+
+unmasked(myMaskedAlignment)
+
+conMat <- consensusMatrix(myFirstAlignment)
+dim(conMat)
+conMat[, 101:110]
+
+conMat <- consensusMatrix(myMaskedAlignment)
+conMat[, 95:104]
+
+printSplitString <- function(x, width=getOption("width") - 1)
+{
+  starts <- seq(from=1, to=nchar(x), by=width)
+  for (i in 1:length(starts))
+    cat(substr(x, starts[i], starts[i] + width - 1), "\n")
+}
+printSplitString(msaConsensusSequence(myFirstAlignment))
+
+printSplitString(msaConsensusSequence(myFirstAlignment, type="upperlower", thresh=c(40, 20)))
+
+printSplitString(msaConsensusSequence(myMaskedAlignment, type="upperlower", thresh=c(40, 20)))
+
+data(BLOSUM62)
+msaConservationScore(myFirstAlignment, BLOSUM62)
+
+msaConservationScore(myFirstAlignment, BLOSUM62, gapVsGap=0, type="upperlower", thresh=c(40, 20))
+
+msaConservationScore(myMaskedAlignment, BLOSUM62, gapVsGap=0, type="upperlower", thresh=c(40, 20))
+
+hemoSeq <- readAAStringSet(system.file("examples/HemoglobinAA.fasta", package="msa"))
+hemoAln <- msa(hemoSeq)
+hemoAln
+hemoAln2 <- msaConvert(hemoAln, type="seqinr::alignment")
+
+library(seqinr)
+d <- dist.alignment(hemoAln2, "identity")
+as.matrix(d)[2:5, "HBA1_Homo_sapiens", drop=FALSE]
+
+library(ape)
+hemoTree <- nj(d)
+plot(hemoTree, main="Phylogenetic Tree of Hemoglobin Alpha Sequences")
+
+hemoAln3 <- msaConvert(hemoAln, type="bios2mds::align")
+str(hemoAln3)
+
+hemoAln4 <- as(hemoAln, "BStringSet")
+hemoAln4
